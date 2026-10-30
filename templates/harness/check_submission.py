@@ -10,14 +10,30 @@ import sys
 def read(path):
     with open(path, encoding="utf-8-sig", newline="") as f:
         rows = list(csv.reader(f))
-    return rows[0], rows[1:]
+    return (rows[0], rows[1:]) if rows else ([], [])
+
+
+def shape(name, head, body):
+    """구조 오류(빈 파일·헤더 중복·행별 열 개수). 있으면 뒤 검사는 의미가 없다."""
+    if not head:
+        return [f"{name}: 빈 파일(헤더 없음)"]
+    fails = [f"{name}: 헤더 이름 중복 {head}"] if len(set(head)) != len(head) else []
+    wrong = [i for i, r in enumerate(body, 1) if len(r) != len(head)]
+    if wrong:
+        fails.append(f"{name}: 열 개수가 헤더({len(head)}개)와 다른 데이터 행 {len(wrong)}개(앞에서 {wrong[:5]}번째, 빈 줄 포함)")
+    return fails
 
 
 def check(sub, sample=None, cols=None, rows=None, allowed=None, rng=None):
     head, body = read(sub)
-    fails = []
+    fails = shape("제출", head, body)
+    if fails:
+        return fails
     if sample:
         s_head, s_body = read(sample)
+        fails = shape("sample", s_head, s_body)
+        if fails:
+            return fails
         cols, rows = s_head, len(s_body)
         if [r[0] for r in body] != [r[0] for r in s_body]:
             fails.append("ID 순서·값이 sample과 다르다(앞자리 0·정렬 확인)")

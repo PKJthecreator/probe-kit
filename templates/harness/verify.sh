@@ -10,7 +10,8 @@ dirty=$(git status --porcelain -- . ':(exclude)outputs/logs' 2>/dev/null | wc -l
 [ "$dirty" = "0" ] || echo "경고: 커밋 안 된 변경 $dirty개 - 먼저 commit 하고 다시 돌린다" >&2
 {
   echo "commit=$(git rev-parse --short HEAD 2>/dev/null || echo none) dirty=$dirty date=$(date '+%F %T %z') cmd=$cmd"
-  sh -c "$cmd"; code=$?
+  # 파이프 앞 명령이나 ; 로 이은 앞 명령의 실패가 뒤 명령의 성공에 가려지지 않게. bash가 없으면 실패(127)로 남는다
+  bash -eo pipefail -c "$cmd"; code=$?
   echo "exit=$code"
 } > "$log" 2>&1
 code=$(tail -n 1 "$log" | sed 's/exit=//')

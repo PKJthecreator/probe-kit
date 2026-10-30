@@ -14,12 +14,12 @@
 - 셸로 되는 일(파일·DB·pandas·mlflow·kubectl·docker·날짜)은 MCP로 하지 않는다.
 
 ## 주제별 서버
-실측 = 2026-10-30 이 PC에서 키 없이 initialize → tools/list(일부는 공개 질의까지). 시험 화면에서의 동작은 [미확인].
+실측 = 시험 전 키 없이 initialize → tools/list(일부는 공개 질의까지). 시험 화면에서의 동작은 [미확인].
 
 | 주제 | 한 줄 JSON(`mcpServers` 안에 넣는 값) | 도구 | 실측 | 주의 |
 |---|---|---|---|---|
 | 모든 주제의 라이브러리 문법(pandas·scikit-learn·FastAPI·Vue·React·Spring …) | `"context7": {"url": "https://mcp.context7.com/mcp"}` | resolve-library-id, query-docs | 연결·'fastapi' 조회 OK | 라이브러리 이름과 일반 질문만 보낸다 |
-| 공개 GitHub 라이브러리 구조·사용법 | `"deepwiki": {"url": "https://mcp.deepwiki.com/mcp"}` | read_wiki_structure·contents, ask_wiki_question(공식 문서엔 ask_question, 10/30 실제 서버 이름) | 연결·fastapi 위키 조회 OK | 답은 생성 요약이라 원문과 대조 |
+| 공개 GitHub 라이브러리 구조·사용법 | `"deepwiki": {"url": "https://mcp.deepwiki.com/mcp"}` | read_wiki_structure·contents, ask_wiki_question(공식 문서엔 ask_question, 실측한 서버 이름) | 연결·fastapi 위키 조회 OK | 답은 생성 요약이라 원문과 대조 |
 | OpenAI API·Agents SDK·Codex | `"openai-docs": {"url": "https://developers.openai.com/mcp"}` | search·fetch docs, openapi spec | 연결 OK | |
 | LangChain·LangGraph | `"langchain-docs": {"url": "https://docs.langchain.com/mcp"}` | search_docs, query_docs_filesystem | 연결 OK | `submit_feedback`(쓰기) 금지 |
 | 공개 데이터셋·사전학습 모델 찾기 | `"huggingface": {"url": "https://huggingface.co/mcp"}` | 익명: hub_repo_search·details, hf_fs, hf_whoami | 연결·'secom' 검색 OK | 과제 데이터로 검색하지 않는다 |

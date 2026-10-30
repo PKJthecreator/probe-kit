@@ -29,13 +29,17 @@
 ## 집계·분석·통계 (모델을 만들지 않는 과제, 또는 모델 전 분석)
 | 층 | 후보 | 언제 |
 |---|---|---|
-| 집계 | **pandas groupby·pivot**, SQL(sqlite3 표준, duckdb 설치 시, PostgreSQL 서버가 있을 때) | 원본이 DB면 SQL, 파일이면 pandas. 결과 숫자는 다른 방법으로 한 번 더 계산 |
+| 집계 | **pandas groupby·pivot**, SQL(sqlite3 표준, DuckDB 설치 시, PostgreSQL 접속 환경이 있을 때) | 파일은 pandas부터, 파일 위 SQL이 유리하면 DuckDB. 원본이 DB면 허용된 연결로 SQL 집계 후 필요한 결과만 읽는다. 결과 숫자는 다른 방법으로 한 번 더 계산 |
+| DB 연결 계층 | SQLAlchemy Core 2.x(조건부) | SQLite만이면 표준 sqlite3로 충분. pandas로 서버 DB를 읽을 때 SQLAlchemy engine을 쓸 수 있고, 제공된 드라이버·연결 방식에 맞춘다. SQL 방언 차이까지 없애 주지는 않는다 |
+| 제공된 데이터 웨어하우스 | Snowflake·Amazon Redshift·BigQuery(조건부) | 과제가 대상·허용 인증·권한·접속 경로를 주고 규정이 허용할 때만. 개인 계정·키를 쓰거나 과제 파일을 임의로 올리지 않는다. 필요한 범위만 조회하고, 반출이 허용된 결과만 `outputs/`에 저장해 재사용, 결정 절에 쿼리와 결과 행 수 |
 | 시각화 | **matplotlib → PNG**, plotly(설치 시, HTML 한 파일에 내장) | 그림이 결론을 뒷받침할 때만. 인터넷 없는 곳에 줄 거면 PNG |
 | 비교·검정 | scipy.stats: t-검정·ANOVA·카이제곱·Mann-Whitney(정규성 의심 시) | 그룹 차이를 주장할 때(6시그마 Analyze). 효과 크기·신뢰구간과 함께, 여러 번 비교하면 보정 |
 | 관계 | 상관 행렬·VIF(공선성), 회귀 계수 | 변수끼리 너무 닮았는지 볼 때. 관계이지 원인 아님 |
 | 구조 찾기 | StandardScaler → PCA, KMeans(실루엣으로 k 확인) | 라벨 없이 패턴·그룹을 찾을 때. 각각 필요할 때만 |
 | 이상치 | IQR, 3σ(관리도), 다변량 IsolationForest | 지우기 전에 기록 오류인지 실제 공정 특성인지 구분(data-check 4) |
 | 회귀 진단 | 수정 R², 잔차 등분산(Breusch-Pagan)·정규성(Q-Q), 조건수·VIF(statsmodels 있을 때) | 회귀 계수로 설명할 때. 비선형이면 2차항·로그 변환을 설명력 증가분으로 비교해 고른다 |
+
+SQLAlchemy 2.x를 쓰면 `create_engine(url)`로 엔진을 만들고, 조회는 `with engine.connect() as conn:`, 쓰기는 `with engine.begin() as conn:` 안에서 `conn.execute(text(sql), params)`로 실행한다(값은 바인딩, `engine.execute()`는 2.x에 없다). 접속 정보는 환경변수로 받고 코드·출력·로그에 남기지 않는다. 웹 뼈대(`web-api`)는 표준 sqlite3 그대로 둔다(ORM은 과제가 요구할 때만).
 
 ## 현업 수준 체크 (첫 완주 뒤·wrap 전에 ✓/✗/생략(이유)로 보고)
 1. 분할이 사용 장면과 맞다(시간·그룹·무작위 이유 한 줄), 전처리는 파이프라인 안에서 학습 분할로만 fit
