@@ -1,0 +1,12 @@
+# push·PR마다 테스트. 시험 환경에서는 원격 실행 결과를 볼 수 없으니 로컬 실행 결과와 구분해 NOT_RUN으로 적는다.
+name: ci
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - run: pip install -r requirements.txt pytest httpx
+      - run: python -m pytest -q

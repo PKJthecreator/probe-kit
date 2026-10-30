@@ -1,0 +1,26 @@
+# 서비스 두 개 예시: api(FastAPI) + db(PostgreSQL). 실행: docker compose up -d --build / 확인: docker compose ps, logs
+# MSA로 늘릴 때: 서비스마다 자기 DB, 서비스 간 호출은 HTTP(타임아웃·재시도) 또는 이벤트(Kafka 등). 과제가 요구할 때만.
+services:
+  api:
+    build: .
+    ports: ["8000:8000"]
+    environment:
+      APP_DB: /data/app.db              # PostgreSQL로 바꾸면 DATABASE_URL을 쓰도록 코드도 바꾼다
+      DATABASE_URL: postgresql://app:${DB_PASSWORD:-change-me}@db:5432/app
+    volumes: ["api-data:/data"]
+    depends_on:
+      db: {condition: service_healthy}
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_DB: app
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-change-me}   # 실제 값은 .env(커밋 금지)
+    volumes: ["db-data:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app"]
+      interval: 5s
+      retries: 10
+volumes:
+  api-data:
+  db-data:

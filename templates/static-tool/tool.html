@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>업무 보고 초안 도구</title>
+<style>
+  body { font-family: system-ui, "Malgun Gothic", sans-serif; max-width: 860px; margin: 1.5rem auto; padding: 0 1rem; line-height: 1.5; }
+  fieldset { margin: .75rem 0; } label { display: block; margin: .25rem 0; }
+  textarea { width: 100%; min-height: 22rem; font: 14px/1.45 Consolas, monospace; }
+  .warn { color: #9a3412; } .muted { color: #555; }
+  button { font: inherit; padding: .4rem .8rem; }
+</style>
+</head>
+<body>
+<h1>업무 보고 초안 도구</h1>
+<p class="muted">파일은 이 PC 안에서만 읽습니다. 인터넷 연결·설치·저장 없음. 창을 닫으면 아무것도 남지 않습니다.</p>
+<label>CSV 파일(여러 개 선택 가능) <input id="files" type="file" accept=".csv,.txt" multiple></label>
+<div id="warn" class="warn" role="status" aria-live="polite"></div>
+<fieldset id="checks" hidden><legend>판정 필요 항목 — 현장 확인한 것만 체크(체크 안 하면 [미확인]으로 나갑니다)</legend></fieldset>
+<button id="copy" type="button">보고 복사</button> <span id="copied" class="muted"></span>
+<textarea id="out" readonly aria-label="보고 초안"></textarea>
+<script src="lib.js"></script>
+<script>
+"use strict";
+const $ = (id) => document.getElementById(id);
+let state = null;
+
+$("files").addEventListener("change", async (e) => {
+  const notes = [], mustCheck = [], counts = {};
+  const all = [];
+  for (const f of e.target.files) {
+    const t = Lib.readTable(await f.text());
+    if (!t.header) { notes.push(`읽지 못한 파일: ${f.name}`); continue; }
+    t.bad.forEach((b) => notes.push(`읽지 못한 줄: ${f.name} ${b.line}번째 줄(${b.reason})`));
+    all.push(...t.records.map((r) => ({ ...r, file: f.name })));
+  }
+  for (const r of Lib.dedupe(all)) {
+    const v = r.values, t = Lib.parseTime(v.time), x = Lib.toNumber(v.value);
+    if (t === null || x === null) { notes.push(`읽지 못한 줄: ${r.file} ${r.line}번째 줄(시각·값)`); continue; }
+    const j = Lib.judge(v.item, x);
+    counts[v.equipment] = (counts[v.equipment] || 0) + 1;
+    if (j === "OUT") mustCheck.push({ id: `${r.file}:${r.line}`, text: `${v.equipment} ${Lib.fmt(t)} ${v.item} ${Lib.round(x)} 규격 밖` });
+    if (j === "UNKNOWN") notes.push(`기준에 없는 항목: ${v.item}`);
+  }
+  state = { title: `[보고 초안] 기준 ${Lib.RULES.version}`, mustCheck, notes: [...new Set(notes)],
+            summary: Object.entries(counts).map(([k, n]) => `${k}: ${n}건`) };
+  $("warn").textContent = notes.length ? `알림 ${notes.length}건 — 보고 ■3에 들어갑니다` : "";
+  const box = $("checks"); box.hidden = !mustCheck.length; box.querySelectorAll("label").forEach((l) => l.remove());
+  for (const m of mustCheck) {
+    const l = document.createElement("label"), c = document.createElement("input");
+    c.type = "checkbox"; c.value = m.id; c.addEventListener("change", render);
+    l.append(c, " ", m.text); box.append(l);
+  }
+  render();
+});
+
+function render() {
+  if (!state) return;
+  const checked = new Set([...document.querySelectorAll("#checks input:checked")].map((c) => c.value));
+  $("out").value = Lib.report(state, checked);
+}
+
+$("copy").addEventListener("click", async () => {
+  try { await navigator.clipboard.writeText($("out").value); }
+  catch { $("out").select(); document.execCommand("copy"); }   // file://에서 clipboard API가 막힐 때
+  $("copied").textContent = "복사됨";
+});
+document.body.dataset.ready = "1";   // 열기 확인용(빌드 점검이 이 표시를 본다)
+</script>
+</body>
+</html>

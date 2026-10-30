@@ -1,0 +1,40 @@
+# web-api를 클러스터에 올리는 최소 구성. 이미지 태그는 kustomization.yaml의 images만 바꾼다(GitOps: CI는 그 한 줄만 commit).
+# 확인: kubectl apply -k . --dry-run=client  → kubectl rollout status deploy/app -n app
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app
+  labels: {app: app}
+spec:
+  replicas: 2
+  selector:
+    matchLabels: {app: app}
+  template:
+    metadata:
+      labels: {app: app}
+    spec:
+      securityContext: {runAsNonRoot: true}
+      terminationGracePeriodSeconds: 30   # preStop(5초) + 앱 종료 처리 시간보다 넉넉히. 짧으면 처리 중 요청이 잘린다
+      containers:
+        - name: app
+          image: registry.example.com/team/app   # 태그는 kustomization이 붙인다
+          ports: [{containerPort: 8000}]
+          lifecycle:
+            preStop: {exec: {command: ["sleep", "5"]}}   # 엔드포인트에서 빠지는 동안 새 요청을 받지 않게 잠깐 대기
+          env:
+            - {name: APP_DB, value: /data/app.db}
+          envFrom:
+            - secretRef: {name: app-secret, optional: true}   # 키·비밀번호는 Secret으로만(이미지·저장소에 넣지 않음)
+          livenessProbe:      # 죽었나 → 재시작
+            httpGet: {path: /health, port: 8000}
+            periodSeconds: 10
+          readinessProbe:     # 요청 받을 준비 됐나(DB·모델) → 아니면 트래픽 제외
+            httpGet: {path: /readyz, port: 8000}
+            periodSeconds: 5
+          resources:
+            requests: {cpu: 100m, memory: 128Mi}
+            limits: {memory: 256Mi}       # 메모리 한도 없으면 노드 전체가 OOM 위험
+          volumeMounts: [{name: data, mountPath: /data}]
+      volumes:
+        - name: data
+          emptyDir: {}        # ponytail: 파드가 바뀌면 데이터가 사라진다. 영속이 필요하면 PVC나 외부 DB

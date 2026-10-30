@@ -1,0 +1,43 @@
+// CI 뼈대: 테스트 통과 → 커밋 SHA로 태그한 이미지 → main 브랜치(멀티브랜치 파이프라인)에서만 레지스트리로 보낸다.
+// 바꿀 값: REGISTRY, IMAGE, credentialsId. 비밀번호는 Jenkins Credentials에만 둔다(이 파일·저장소에 쓰지 않는다).
+pipeline {
+    agent any
+    options {
+        disableConcurrentBuilds()                   // 같은 잡이 겹쳐 돌며 같은 태그를 덮어쓰지 않게
+        timeout(time: 30, unit: 'MINUTES')
+        buildDiscarder(logRotator(daysToKeepStr: '14'))
+    }
+    environment {
+        REGISTRY = 'registry.example.com'
+        IMAGE    = "${REGISTRY}/team/app"
+    }
+    stages {
+        stage('Test') {
+            steps {
+                sh '''
+                    python -m pip install -q -r requirements.txt pytest httpx
+                    python -m pytest -q --junitxml=reports/junit.xml
+                '''
+            }
+            post { always { junit 'reports/junit.xml' } }    // 실패한 테스트 이름이 빌드 화면에 남는다
+        }
+        stage('Build') {
+            steps {
+                script { env.TAG = env.GIT_COMMIT ? env.GIT_COMMIT.take(7) : "b${env.BUILD_NUMBER}" }   // SCM에서 받지 않았으면 빌드 번호
+                sh 'docker build --platform linux/amd64 -t "$IMAGE:$TAG" .'
+            }
+        }
+        stage('Push') {
+            when { branch 'main' }
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'registry-login', usernameVariable: 'USR', passwordVariable: 'PW')]) {
+                    sh 'echo "$PW" | docker login "$REGISTRY" -u "$USR" --password-stdin'
+                    sh 'docker push "$IMAGE:$TAG"'
+                }
+            }
+        }
+    }
+    post {
+        cleanup { sh 'if [ -n "$TAG" ]; then docker image rm "$IMAGE:$TAG" || true; fi' }   // 빌드 노드 디스크 정리
+    }
+}
