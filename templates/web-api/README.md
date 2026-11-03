@@ -21,7 +21,7 @@
 | 저장 | **SQLite(표준 라이브러리)**, PostgreSQL(compose), SQLAlchemy ORM | 동시 쓰기·여러 서비스가 같은 DB를 쓰면 PostgreSQL |
 | 실시간 | 폴링, **SSE(`StreamingResponse`, `text/event-stream`)**, WebSocket | 긴 작업 진행·LLM 토큰 스트리밍은 SSE |
 | 구조 | **단일 서비스 + 모듈 분리(routers·rules·repository)**, MSA(서비스별 DB·API 게이트웨이·Kafka 이벤트) | MSA는 과제가 명시할 때만. 아니면 경계만 나눠 둔다 |
-| 인증 | 없음(시험), API 키 헤더, OAuth2/JWT(`fastapi.security`) | 과제가 사용자 구분을 요구할 때 |
+| 인증 | 없음(시험), 세션 쿠키 로그인·역할(`../web-starter`), API 키 헤더, OAuth2/JWT(`fastapi.security`) | 구성원/운영자처럼 사용자 구분이 요구되면 web-starter에서 시작 |
 | 배포 | uvicorn 직접, Docker·compose(`../ops`) | 과제가 컨테이너를 요구할 때 |
 
 ## 현업 수준 체크

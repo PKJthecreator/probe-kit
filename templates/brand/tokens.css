@@ -1,0 +1,20 @@
+/* SK hynix 브랜드 토큰. 쓰는 법: 과제 화면의 static/brand.css로 복사하고 ui.css 뒤에 <link>한다(web-starter는 이미 연결돼 있다).
+   값의 근거는 DESIGN.md: CI = 공식 CI 페이지 공개값, 사이트 = 공식 사이트 CSS에서 관측한 값. 로고·글꼴 파일은 넣지 않는다. */
+:root {
+  --brand-name: "SK hynix";            /* 로고 이미지가 없을 때 글자 로고(ui.js wordmark): 첫 단어 --brand, 나머지 --brand-2 */
+  --brand: #EA002C;                    /* CI SK Red. 로고·얇은 강조선·활성 메뉴. 흰 바탕 대비 4.6:1이라 굵은 글자까지는 된다 */
+  --brand-2: #F47725;                  /* CI SK Orange. 장식·그래프 강조만. 흰 바탕 대비 2.8:1 → 글자색 금지 */
+  --primary: #4747B3;                  /* 사이트: 버튼·체크·링크·활성 메뉴 색(7.4:1) */
+  --on-primary: #FFFFFF;
+  --ink: #212121;                      /* 사이트: 제목·진한 글자 */
+  --body: #666666;                     /* 사이트: 본문(5.7:1) */
+  --muted: #757575;                    /* 보조 글자(4.6:1). 사이트의 #BDBDBD는 선·비활성 전용 */
+  --line: #E5E5E5;                     /* 사이트: 구분선 */
+  --surface: #FFFFFF;
+  --surface-2: #F5F5F5;                /* 사이트: 면·표 머리 */
+  --ok: #1A7F37; --warn: #9A6700;
+  --ng: #C62828;                       /* 오류. SK Red와 헷갈리므로 항상 ✕ 기호+문구와 같이 */
+  --radius: 4px;                       /* 사이트: 3~6px, 둥근 버튼은 원형 */
+  --header-h: 82px;                    /* 사이트 헤더 높이 */
+  --font-body: Roboto, "Noto Sans KR", "Malgun Gothic", "Apple SD Gothic Neo", system-ui, sans-serif; /* 사이트: Roboto + Noto Sans KR */
+}

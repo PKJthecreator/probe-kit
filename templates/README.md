@@ -14,9 +14,13 @@
 | 집계·비교·통계 분석 보고(모델 없음) | `data-ml` README의 "집계·분석·통계" 절 | pandas·SQL 집계 → 필요하면 검정·그림 → 핵심 숫자 다른 방법으로 재계산 |
 | 수요·생산량·센서 다음 값 예측 | `timeseries` | `forecast.py --h --season` |
 | 파일을 넣으면 보고·인계 초안이 나오는 도구, 설치·인터넷 안 되는 공용 PC | `static-tool` | `node --test` → `node build.mjs` → `file://`로 열기 |
-| Vue(Vite) 골격을 받은 화면 과제 | `web-api/vue/JudgeForm.vue` | 폼·로딩·오류·결과 상태 컴포넌트, API는 `web-api` |
+| Vue(Vite) 골격을 받은 화면 과제 | `web-api/vue/JudgeForm.vue`, 로그인은 `web-starter/vue` | 폼·로딩·오류·결과 상태 컴포넌트, API는 `web-api`(로그인 있으면 `web-starter`) |
+| React(Vite)를 요구하는 화면 과제 | `web-starter/react/AuthKit.jsx` | `npm create vite@latest web -- --template react` → 로그인 상태·역할 막기·로그인 폼 |
 | Vite·React 골격을 받았는데 받는 쪽이 설치·서버 불가 | `static-tool/build.mjs --vite dist` | 빌드 결과를 HTML 한 파일로(기본 `dist/index.html`은 `file://`에서 빈 화면) |
 | 판정·조회 웹 서비스(API + 화면), 서버를 띄울 수 있을 때 | `web-api` | `pytest` → `uvicorn` |
+| 로그인 있는 웹(구성원·운영자, 가입 규칙·아이디 저장·비밀번호 찾기·권한) | `web-starter` | `python -m app.security` → `pytest` → `seed.py --demo` → `uvicorn` |
+| 회사 시나리오 화면에 공식 색·글꼴·로고(SK hynix 기본) | `brand` | `tokens.css`를 `static/brand.css`로, AI는 `DESIGN.md`부터 |
+| 정원 있는 배정·정류장 묶기·방문 순서(요구·데이터가 있을 때만) | `optimize` | `opt.py --demo` → 쓸 함수만 |
 | 설비 알람 분류 + 조치 문서 근거 검색(구현형) | `web-api` + `agent` | `rules.py`로 등급 판정, `rag.py`로 SOP 검색, 둘을 `/api/triage` 하나로 묶는다(agent README) |
 | 챗봇·도구 호출 에이전트 | `agent` | `agent.py --demo` → 도구·`Deps` 교체 → `eval.py`로 평가 세트. LangGraph가 요구되면 `graph.py` |
 | 모델 승격·롤백·드리프트, 모델을 API로 운영 | `mlops` | `registry.py` → `serve.py`(예측·피드백·드리프트·승인 승격) |
@@ -25,3 +29,10 @@
 | MCP 연결(주제별 서버 표, 키 없이 연결 실측)·MCP 서버 구현 | `mcp` | 기본 0개, 필요할 때 1개. README의 원칙 먼저 |
 
 복사 예(작업 폴더에서): `cp ~/probe-kit/templates/data-ml/train.py ~/probe-kit/templates/data-ml/check_data.py .` — 같은 이름 파일이 이미 있으면 덮어쓰기 전에 diff부터 본다.
+
+## 참고 clone 후보 — 내장 뼈대로 부족할 때만 (작업 폴더 밖 `~/ref-*`, 구조만 읽고 새로 쓴다)
+| 상황 | 받기(얕게) | 볼 곳 | 라이선스·크기(2026-11-03 확인) |
+|---|---|---|---|
+| 과제가 PostgreSQL+JWT+React 풀스택을 명시 | `git clone --depth 1 https://github.com/fastapi/full-stack-fastapi-template ~/ref-fullstack` | `backend/app/api/routes/login.py`, `backend/app/core/security.py`, `frontend/src/hooks/useAuth.ts` | MIT · 약 4MB |
+| 용량·시간창 있는 차량 경로를 요구하고 `pip install ortools`가 될 때 | `git clone --depth 1 --filter=blob:none --sparse https://github.com/google/or-tools ~/ref-ortools && git -C ~/ref-ortools sparse-checkout set ortools/constraint_solver/samples` | `vrp_capacity.py`, `vrp_time_windows.py` | Apache-2.0 · 부분 clone 약 7MB(전체는 1GB 넘음) |
+- React·Vue 골격은 clone하지 않고 `npm create vite@latest`로 만든다. 받기가 실패하면 내장 뼈대(`web-starter`·`optimize`)로 간다. 코드를 옮기지 않으므로 고지 의무가 생기지 않는다. 옮겨야 하면 그 저장소의 LICENSE 고지를 함께 둔다.

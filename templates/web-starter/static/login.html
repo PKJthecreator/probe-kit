@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>로그인</title>
+<link rel="stylesheet" href="ui.css"><link rel="stylesheet" href="brand.css">
+</head>
+<body>
+<main class="auth card">
+  <div id="brand"></div>
+  <h1>로그인</h1>
+  <div id="msg" role="alert"></div>
+  <form id="f" method="post" action="javascript:void 0" novalidate>
+    <div class="field"><label for="username">아이디</label>
+      <input id="username" name="username" autocomplete="username" required maxlength="40"><div class="error" id="username-error"></div></div>
+    <div class="field"><label for="password">비밀번호</label>
+      <input id="password" name="password" type="password" autocomplete="current-password" required maxlength="129"><div class="error" id="password-error"></div></div>
+    <div class="row" style="justify-content:space-between">
+      <label class="check"><input type="checkbox" id="remember"> 아이디 저장</label>
+      <label class="check"><input type="checkbox" id="show"> 비밀번호 보기</label>
+    </div>
+    <button class="btn primary">로그인</button>
+  </form>
+  <div class="links"><a href="forgot.html">비밀번호 찾기</a><a href="signup.html">회원가입</a></div>
+  <p class="hint" style="font-size:.85rem;color:var(--muted)">공용 PC에서는 아이디 저장을 끄세요. 비밀번호는 저장하지 않습니다.</p>
+</main>
+<script type="module">
+import { api } from "./api.js";
+import { $, safeNext, wordmark, fieldErrors, busy } from "./ui.js";
+$("#brand").append(wordmark());
+const f = $("#f"), msg = $("#msg"), KEY = "savedUsername";
+// 아이디 저장: 아이디만 브라우저(localStorage)에 둔다. 비밀번호·세션은 저장하지 않는다.
+const saved = localStorage.getItem(KEY);
+if (saved) { f.username.value = saved; $("#remember").checked = true; f.password.focus(); } else f.username.focus();
+$("#show").onchange = (e) => (f.password.type = e.target.checked ? "text" : "password");
+
+f.onsubmit = (e) => {
+  e.preventDefault();
+  fieldErrors(f); msg.textContent = ""; msg.className = "";
+  if (!f.username.value.trim() || !f.password.value) return fieldErrors(f, { ...(!f.username.value.trim() && { username: ["아이디를 입력하세요"] }), ...(!f.password.value && { password: ["비밀번호를 입력하세요"] }) });
+  busy(f.querySelector("button"), async () => {
+    try {
+      const me = await api("/api/auth/login", { method: "POST", body: { username: f.username.value, password: f.password.value } });
+      $("#remember").checked ? localStorage.setItem(KEY, f.username.value.trim()) : localStorage.removeItem(KEY);
+      const next = new URLSearchParams(location.search).get("next");
+      if (me.must_change) location.href = "change-password.html";
+      else if (me.role !== "admin" && next && next.includes("admin")) location.href = "app.html"; // 구성원이 운영자 주소로 왔으면 홈
+      else location.href = safeNext(next, me.role === "admin" ? "admin.html" : "app.html");
+    } catch (err) {
+      msg.className = "alert ng"; msg.textContent = err.message;
+      f.password.value = ""; f.password.focus();
+    }
+  });
+};
+</script>
+</body>
+</html>

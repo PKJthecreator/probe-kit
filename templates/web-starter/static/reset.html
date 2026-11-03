@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer"><!-- 링크 토큰이 다른 사이트로 새지 않게 -->
+<title>비밀번호 재설정</title>
+<link rel="stylesheet" href="ui.css"><link rel="stylesheet" href="brand.css">
+</head>
+<body>
+<main class="auth card">
+  <div id="brand"></div>
+  <h1>새 비밀번호</h1>
+  <div id="msg" role="alert"></div>
+  <form id="f" method="post" action="javascript:void 0" novalidate>
+    <div class="field"><label for="password">새 비밀번호</label>
+      <input id="password" name="password" type="password" autocomplete="new-password" required maxlength="129">
+      <ul class="pw-list" id="pw-rules"></ul><div class="error" id="password-error"></div></div>
+    <div class="field"><label for="confirm">새 비밀번호 확인</label>
+      <input id="confirm" name="confirm" type="password" autocomplete="new-password" required><div class="error" id="confirm-error"></div></div>
+    <button class="btn primary">바꾸기</button>
+  </form>
+  <div class="links"><a href="login.html">로그인으로</a></div>
+</main>
+<script type="module">
+import { api } from "./api.js";
+import { $, wordmark, fieldErrors, busy, passwordChecklist } from "./ui.js";
+$("#brand").append(wordmark());
+const f = $("#f"), msg = $("#msg");
+const token = new URLSearchParams(location.hash.slice(1)).get("token"); // # 뒤라 서버 로그에 남지 않는다
+history.replaceState(null, "", location.pathname);                       // 주소창에서도 지운다
+if (!token) { msg.className = "alert ng"; msg.textContent = "링크가 올바르지 않습니다. 비밀번호 찾기를 다시 하세요."; f.hidden = true; }
+await passwordChecklist(f.password, $("#pw-rules"));
+f.onsubmit = (e) => {
+  e.preventDefault();
+  const errs = f.password.value !== f.confirm.value ? { confirm: ["비밀번호가 서로 다릅니다"] } : {};
+  fieldErrors(f, errs);
+  if (errs.confirm) return;
+  busy(f.querySelector("button"), async () => {
+    try {
+      await api("/api/auth/reset", { method: "POST", body: { token, password: f.password.value } });
+      f.hidden = true; msg.className = "alert ok"; msg.textContent = "바꿨습니다. 새 비밀번호로 로그인하세요."; // 자동 로그인하지 않는다
+    } catch (err) { fieldErrors(f, err.fields); msg.className = "alert ng"; msg.textContent = err.message; }
+  });
+};
+</script>
+</body>
+</html>

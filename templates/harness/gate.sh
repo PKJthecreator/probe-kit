@@ -29,7 +29,8 @@ run() {  # 로그 이름, 명령
     submission:*) r=PASS ;;
     *pytest*) grep -Eq "[1-9][0-9]* passed" "$log" && r=PASS || r="NOT_RUN(통과한 테스트 0개)" ;;
     *node*) grep -Eq "^(ℹ|#) pass [1-9]" "$log" && r=PASS || r="NOT_RUN(통과 건수 확인 안 됨: 기본 리포터로)" ;;
-    *) r="PASS(종료 코드 기준, 건수는 로그로 확인)" ;;
+    *unittest*) grep -Eq "^Ran [1-9][0-9]* test" "$log" && grep -Eq "^OK" "$log" && r=PASS || r="NOT_RUN(통과 건수 확인 안 됨)" ;;
+    *) r="NOT_RUN(종료 코드 0, 통과 건수를 로그에서 직접 확인한 뒤 PASS)" ;;
   esac
   add "$1: $r ($log)"
 }

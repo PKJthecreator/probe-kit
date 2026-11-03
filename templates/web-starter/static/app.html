@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>내 화면</title>
+<link rel="stylesheet" href="ui.css"><link rel="stylesheet" href="brand.css">
+</head>
+<body>
+<main>
+  <h1 id="hello">내 화면</h1>
+  <!-- 과제 기능 자리: items를 과제 데이터(예: 내 노선·시간표·신청)로 바꾼다. 로딩·빈 결과·오류 세 상태는 그대로 둔다 -->
+  <section class="card">
+    <h2>내 항목</h2>
+    <form id="f" method="post" action="javascript:void 0" class="row" novalidate>
+      <div class="field" style="flex:1"><label for="title">새 항목</label>
+        <input id="title" name="title" required maxlength="100"><div class="error" id="title-error"></div></div>
+      <button class="btn primary">추가</button>
+    </form>
+    <div id="list" aria-live="polite"></div>
+  </section>
+</main>
+<script type="module">
+import { api } from "./api.js";
+import { $, guard, renderHeader, showState, fillTable, fieldErrors, toast, busy, fmtTime } from "./ui.js";
+const me = await guard();
+renderHeader(me);
+$("#hello").textContent = `${me.name}님의 화면`;
+const list = $("#list"), f = $("#f");
+
+async function load() {
+  showState(list, "loading", "불러오는 중…");
+  try {
+    fillTable(list, [["id", "번호"], ["title", "제목"], ["created_at", "만든 시각", fmtTime]], await api("/api/items"), "아직 항목이 없습니다. 위에서 추가하세요.");
+  } catch (err) { showState(list, "error", err.message); }
+}
+f.onsubmit = (e) => {
+  e.preventDefault();
+  if (!f.title.value.trim()) return fieldErrors(f, { title: ["제목을 입력하세요"] });
+  busy(f.querySelector("button"), async () => {
+    try {
+      await api("/api/items", { method: "POST", body: { title: f.title.value } });
+      f.reset(); fieldErrors(f); toast("추가했습니다"); load();
+    } catch (err) { fieldErrors(f, err.fields || { title: [err.message] }); }
+  });
+};
+load();
+</script>
+</body>
+</html>

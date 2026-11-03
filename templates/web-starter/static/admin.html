@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>운영자</title>
+<link rel="stylesheet" href="ui.css"><link rel="stylesheet" href="brand.css">
+</head>
+<body>
+<main>
+  <h1>운영자 화면</h1>
+  <section class="card">
+    <h2>사용자</h2>
+    <form id="search" class="row" role="search">
+      <div class="field" style="flex:1"><label for="q">아이디·이름 검색</label><input id="q" name="q" maxlength="40"></div>
+      <button class="btn">검색</button>
+    </form>
+    <div id="users" aria-live="polite"></div>
+  </section>
+  <section class="card">
+    <h2>전체 항목</h2>
+    <div id="items" aria-live="polite"></div>
+  </section>
+  <section class="card" id="outbox-card" hidden>
+    <h2>발송함 <span class="badge info">데모 전용</span></h2>
+    <p class="hint">메일 서버가 없을 때 비밀번호 재설정 안내가 여기에 쌓입니다(APP_ENV=demo일 때만 보임).</p>
+    <div id="outbox"></div>
+  </section>
+</main>
+<script type="module">
+import { api } from "./api.js";
+import { $, guard, renderHeader, showState, fillTable, toast, fmtTime } from "./ui.js";
+const me = await guard({ role: "admin" });
+renderHeader(me);
+
+function tempButton(id, row) {
+  const b = document.createElement("button");
+  b.className = "btn small"; b.type = "button"; b.textContent = "임시 비밀번호";
+  b.onclick = async () => {
+    if (!confirm(`${row.username}의 비밀번호를 임시 비밀번호로 바꿀까요? 기존 로그인은 끊깁니다.`)) return;
+    try {
+      const r = await api(`/api/admin/users/${id}/temp-password`, { method: "POST" });
+      const out = document.createElement("code"); out.textContent = r.temp_password; // 한 번만 보인다. 전달 뒤 화면을 닫는다
+      b.replaceWith(out); toast("임시 비밀번호를 전달하세요. 첫 로그인 때 바꾸게 됩니다.");
+    } catch (err) { toast(err.message); }
+  };
+  return b;
+}
+const roleBadge = (label, row) => { const s = document.createElement("span"); s.className = "badge " + (row.role === "admin" ? "warn" : "info"); s.textContent = label; return s; };
+
+async function loadUsers(q = "") {
+  const el = $("#users");
+  showState(el, "loading", "불러오는 중…");
+  try {
+    fillTable(el, [["username", "아이디"], ["name", "이름"], ["role_label", "역할", roleBadge],
+      ["must_change", "변경 필요", (v) => (v ? "예" : "")], ["created_at", "가입", fmtTime], ["id", "조치", tempButton]],
+      await api("/api/admin/users?q=" + encodeURIComponent(q)), "검색 결과가 없습니다.");
+  } catch (err) { showState(el, "error", err.message); }
+}
+async function loadItems() {
+  const el = $("#items");
+  showState(el, "loading", "불러오는 중…");
+  try { fillTable(el, [["id", "번호"], ["owner_id", "사용자 번호"], ["title", "제목"], ["created_at", "만든 시각", fmtTime]], await api("/api/items")); }
+  catch (err) { showState(el, "error", err.message); }
+}
+async function loadOutbox() {
+  try {
+    const rows = await api("/api/admin/outbox");
+    $("#outbox-card").hidden = false;
+    fillTable($("#outbox"), [["created_at", "시각", fmtTime], ["to_addr", "받는 사람"], ["body", "내용", (v) => {
+      const a = document.createElement("a"); const m = v.match(/https?:\/\/\S+/); a.href = m ? m[0].replace(/^https?:\/\/[^/]+/, "") : "#"; a.textContent = "재설정 링크 열기"; return a; }]], rows);
+  } catch { /* 데모가 아니면 404 → 숨김 */ }
+}
+$("#search").onsubmit = (e) => { e.preventDefault(); loadUsers($("#q").value.trim()); };
+loadUsers(); loadItems(); loadOutbox();
+</script>
+</body>
+</html>
