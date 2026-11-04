@@ -288,6 +288,13 @@ def health():
     return {"status": "ok", "policy": policy.VERSION}
 
 
+@app.get("/readyz")
+def readyz(db: sqlite3.Connection = Depends(get_db)):
+    """준비 확인(k8s readiness): DB에 실제로 질의가 되는지. 실패하면 500."""
+    db.execute("SELECT 1 FROM users LIMIT 1")
+    return {"status": "ready"}
+
+
 # ---------- 과제 기능 자리: 공개 / 구성원(자기 것만) / 운영자(전체) 3층 예시. items를 과제 데이터로 바꾼다 ----------
 class ItemIn(BaseModel):
     title: str = Field(min_length=1, max_length=100)

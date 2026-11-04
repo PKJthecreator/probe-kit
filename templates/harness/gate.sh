@@ -29,7 +29,9 @@ run() {  # 로그 이름, 명령
     submission:*) r=PASS ;;
     *pytest*) grep -Eq "[1-9][0-9]* passed" "$log" && r=PASS || r="NOT_RUN(통과한 테스트 0개)" ;;
     *node*) grep -Eq "^(ℹ|#) pass [1-9]" "$log" && r=PASS || r="NOT_RUN(통과 건수 확인 안 됨: 기본 리포터로)" ;;
-    *unittest*) grep -Eq "^Ran [1-9][0-9]* test" "$log" && grep -Eq "^OK" "$log" && r=PASS || r="NOT_RUN(통과 건수 확인 안 됨)" ;;
+    *unittest*)  # "Ran 1 test … OK (skipped=1)"처럼 전부 skip이면 PASS가 아니다
+      ran=$(sed -n 's/^Ran \([0-9]*\) test.*/\1/p' "$log" | tail -n 1); sk=$(sed -n 's/^OK (skipped=\([0-9]*\).*/\1/p' "$log" | tail -n 1)
+      grep -Eq "^OK" "$log" && [ "${ran:-0}" -gt "${sk:-0}" ] && r=PASS || r="NOT_RUN(실행 0건·전부 skip·건수 확인 안 됨)" ;;
     *) r="NOT_RUN(종료 코드 0, 통과 건수를 로그에서 직접 확인한 뒤 PASS)" ;;
   esac
   add "$1: $r ($log)"

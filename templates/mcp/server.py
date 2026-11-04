@@ -1,7 +1,7 @@
 """읽기 전용 MCP 서버 뼈대(과제가 'MCP 서버를 만들어라'일 때만). 공식 Python SDK(`pip install mcp`). 1.x(FastMCP)·2.x(MCPServer) 둘 다.
 - 시점마다 값이 바뀌는 조회 = Tool(매번 계산), 고정 문서·규칙 = Resource. 상태를 바꾸는 도구는 넣지 않는다.
 - 판정·계산은 코드가 하고 결과만 돌려준다. 인자는 검증한다.
-실행(stdio): python server.py      연결 설정 예: mcp.json의 "local-readonly"
+실행(stdio): python server.py      연결 설정 예: README의 "local"(MCP 탭 JSON)
 """
 try:
     from mcp.server.mcpserver import MCPServer as Server  # mcp 2.x

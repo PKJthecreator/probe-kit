@@ -35,6 +35,7 @@ def make_admin(username="boss01"):
 
 MATRIX = [  # 역할: none(로그인 안 함) / member / admin
     ("GET", "/api/public/info", "none", 200),
+    ("GET", "/readyz", "none", 200),  # k8s readiness(ops/k8s/deployment.yaml)
     ("GET", "/api/auth/me", "none", 401),
     ("GET", "/api/items", "none", 401),
     ("GET", "/api/items", "member", 200),

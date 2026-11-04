@@ -1,4 +1,4 @@
-"""여러 CSV 사이 키 관계 점검(probe-data-check 4). 표준 라이브러리만 쓰고 원본 값은 출력하지 않는다(건수·줄 번호만).
+"""여러 CSV 사이 키 관계 점검(probe-data-check 3). 표준 라이브러리만 쓰고 원본 값은 출력하지 않는다(건수·줄 번호만).
 사용: python check_keys.py --fk 탑승.csv:emp_id=직원.csv:emp_id [--fk 자식.csv:열=부모.csv:열 ...]
       python check_keys.py --demo
 판정: 고아 키(부모에 없는 자식 키)·부모 키 중복 = 오류(종료 1). 빈 키·참조 안 된 부모 = 정보.

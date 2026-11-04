@@ -2,12 +2,13 @@
 
 쓰는 때: 과제가 Docker 실행, 여러 서비스 구성(MSA), CI·배포 파이프라인을 요구할 때. 요구가 없으면 쓰지 않는다.
 필요: Docker(시험 환경에 없을 수 있다. `docker --version`으로 먼저 본다. 없으면 파일만 만들고 실행은 NOT_RUN).
-사용: `Dockerfile`·`compose.yaml`은 `../web-api` 또는 `../web-starter` 폴더에 복사해 쓴다(web-starter면 Dockerfile에 `COPY seed.py .` 한 줄을 더하고, 계정은 `docker exec <컨테이너> python seed.py --demo`로 볼륨 DB에 만든다). `requirements.txt`는 `pip freeze`가 아니라 실제로 import하는 패키지만 버전과 함께 적는다.
+사용: `Dockerfile`·`.dockerignore`·`compose.yaml`은 `../web-api` 또는 `../web-starter` 폴더에 복사해 쓴다(두 폴더에 버전 고정 `requirements.txt`가 있다. 과제에서 패키지를 더하면 거기에 버전과 함께 적는다. web-starter면 Dockerfile에 `COPY seed.py .` 한 줄을 더하고, 계정은 `docker exec <컨테이너> python seed.py --demo`로 볼륨 DB에 만든다). `requirements.txt`는 `pip freeze`가 아니라 실제로 import하는 패키지만 버전과 함께 적는다.
 
 | 파일 | 하는 일 |
 |---|---|
 | `Dockerfile` | slim 이미지, 의존성 먼저 복사(빌드 캐시), 비루트 사용자, HEALTHCHECK, 0.0.0.0 |
-| `compose.yaml` | api + PostgreSQL, healthcheck 기반 기동 순서, 볼륨 영속, 비밀값은 `.env` |
+| `compose.yaml` | 기본은 api 하나(SQLite를 볼륨에 영속). PostgreSQL은 주석을 풀어 쓰는 예시(healthcheck 기동 순서, 비밀값은 `.env`) |
+| `.dockerignore` | `.git`·`.env`·`*.db`·`outputs/`를 빌드에 넣지 않는다 |
 | `.github/workflows/ci.yml` | checkout → 설치 → pytest |
 | `Jenkinsfile` | 테스트(junit) → 이미지(태그 = git SHA) → main일 때만 push, 자격 증명은 Credentials. CI 서버용이라 시험 PC에서는 실행하지 않고 파일만(인터넷·레지스트리 필요) |
 | `k8s/` | Deployment(liveness `/health`·readiness `/readyz`·자원 요청/한도·비루트)·Service·Ingress·Kustomize(이미지 태그 한 줄만 CI가 수정 → GitOps) |

@@ -1,0 +1,4 @@
+# 확인한 조합(web-starter pytest 13·web-api 1 passed·uvicorn 기동 /health 200, 2026-11). 테스트용 pytest·httpx는 CI에서 따로 설치
+fastapi==0.162.0
+pydantic==2.14.2
+uvicorn==0.54.0

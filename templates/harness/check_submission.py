@@ -43,7 +43,7 @@ def check(sub, sample=None, cols=None, rows=None, allowed=None, rng=None):
         fails.append(f"행 수 {len(body)} != {rows}")
     if len({r[0] for r in body}) != len(body):
         fails.append("ID 중복")
-    vals = [r[1] if len(r) > 1 else "" for r in body]
+    vals = [v for r in body for v in (r[1:] or [""])]  # ID 뒤의 모든 예측 열(다중 출력 제출도)
     if any(v.strip() == "" or v.lower() == "nan" for v in vals):
         fails.append("예측 값 빈칸·NaN")
     if allowed and set(vals) - set(allowed):
