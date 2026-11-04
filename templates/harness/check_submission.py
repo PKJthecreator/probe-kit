@@ -43,6 +43,8 @@ def check(sub, sample=None, cols=None, rows=None, allowed=None, rng=None):
         fails.append(f"행 수 {len(body)} != {rows}")
     if len({r[0] for r in body}) != len(body):
         fails.append("ID 중복")
+    if any(r[0].strip() == "" for r in body):
+        fails.append("ID 빈칸")
     vals = [v for r in body for v in (r[1:] or [""])]  # ID 뒤의 모든 예측 열(다중 출력 제출도)
     if any(v.strip() == "" or v.lower() == "nan" for v in vals):
         fails.append("예측 값 빈칸·NaN")
@@ -75,5 +77,10 @@ if __name__ == "__main__":
     a = ap.parse_args()
     fails = check(a.submission, a.sample, a.cols.split(",") if a.cols else None, a.rows,
                   a.allowed.split(",") if a.allowed else None, tuple(map(float, a.range.split(":"))) if a.range else None)
-    print("SUBMISSION PASS" if not fails else "SUBMISSION FAIL\n- " + "\n- ".join(fails))
-    sys.exit(1 if fails else 0)
+    if fails:
+        print("SUBMISSION FAIL\n- " + "\n- ".join(fails))
+        sys.exit(1)
+    if not (a.sample or a.cols or a.rows is not None):  # 대조 기준 없이 구조만 맞은 것은 통과가 아니다
+        print("SUBMISSION NOT_RUN: 구조만 확인. 대조 기준(--sample 또는 --cols·--rows)을 준다")
+        sys.exit(2)
+    print("SUBMISSION PASS")

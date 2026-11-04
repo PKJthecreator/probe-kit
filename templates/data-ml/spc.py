@@ -7,17 +7,31 @@ import numpy as np
 D2 = 1.128  # 이동범위(n=2)의 d2 상수: sigma = 평균 MR / 1.128
 
 
+def _finite(x, what):
+    """결측·무한값이 섞이면 조용히 nan/inf 판정이 나오므로 멈춘다. 처리(제외·보간)와 이유는 결정 절에."""
+    x = np.asarray(x, float)
+    if not np.isfinite(x).all():
+        raise ValueError(f"{what}에 결측·무한값 {int((~np.isfinite(x)).sum())}개: 먼저 처리한다")
+    return x
+
+
 def imr_limits(base):
     """기준 구간 값으로 I 관리도의 중심선·시그마·한계. 평균 MR로 단기 시그마를 잡는다."""
-    base = np.asarray(base, float)
+    base = _finite(base, "기준 구간")
+    if len(base) < 2:
+        raise ValueError("기준 구간 값이 2개 이상 필요하다")
     sigma = np.abs(np.diff(base)).mean() / D2
+    if sigma <= 0:
+        raise ValueError("기준 구간 변동이 0: 관리한계를 정할 수 없다(측정 해상도·기준 구간을 확인)")
     cl = base.mean()
     return {"cl": cl, "sigma": sigma, "ucl": cl + 3 * sigma, "lcl": cl - 3 * sigma}
 
 
 def we_rules(x, cl, sigma):
     """Western Electric 규칙 위반 위치. 1: 3σ 밖 1점 / 2: 연속 3점 중 2점이 같은 쪽 2σ 밖 / 4: 연속 8점 같은 쪽."""
-    z = (np.asarray(x, float) - cl) / sigma
+    if not (np.isfinite(cl) and np.isfinite(sigma) and sigma > 0):
+        raise ValueError("cl은 유한값, sigma는 0보다 큰 유한값이어야 한다(imr_limits 결과를 쓴다)")
+    z = (_finite(x, "감시 구간") - cl) / sigma
     side = np.sign(z)
     r1 = np.abs(z) > 3
     r2 = np.array([i >= 2 and ((z[i - 2:i + 1] > 2).sum() >= 2 or (z[i - 2:i + 1] < -2).sum() >= 2) for i in range(len(z))])
@@ -67,4 +81,12 @@ if __name__ == "__main__":
     cap = capability(base, lsl=7, usl=13)
     assert 0.8 < cap["cpk"] < 1.3 and 0.8 < cap["ppk"] < 1.3, cap
     assert tracking_signal([10, 11, 12], [8, 9, 10]) == 3.0
+    bad_calls = [(imr_limits, [5.0] * 10), (imr_limits, [1.0]), (imr_limits, [1.0, np.nan, 2.0]),  # 변동 0·표본 1개·결측
+                 (we_rules, [1.0, np.inf], 10, 1), (we_rules, [1.0, 2.0], 10, 0), (we_rules, [1.0, 2.0], np.nan, 1)]
+    for f, *args in bad_calls:  # 판정하지 않고 멈춰야 한다
+        try:
+            f(*args)
+            raise AssertionError(f"막지 못함: {f.__name__}{tuple(args)}")
+        except ValueError:
+            pass
     print("spc PASS", {k: round(val, 3) for k, val in lim.items()}, cap)

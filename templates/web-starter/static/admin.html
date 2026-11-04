@@ -35,13 +35,23 @@ renderHeader(me);
 function tempButton(id, row) {
   const b = document.createElement("button");
   b.className = "btn small"; b.type = "button"; b.textContent = "임시 비밀번호";
+  let timer;
+  const reset = () => { clearTimeout(timer); delete b.dataset.armed; b.disabled = false; b.textContent = "임시 비밀번호"; };
   b.onclick = async () => {
-    if (!confirm(`${row.username}의 비밀번호를 임시 비밀번호로 바꿀까요? 기존 로그인은 끊깁니다.`)) return;
+    // 브라우저 확인 창(confirm) 대신 페이지 안에서 두 번 누르기: 시험 화면은 전체화면 강제 + 미리보기는 IDE 안 화면이라 네이티브 창이 막히거나 화면에 영향을 줄 수 있다
+    if (b.disabled) return;
+    if (!b.dataset.armed) {
+      b.dataset.armed = "1"; b.textContent = "한 번 더 누르면 바뀜";
+      toast(`${row.username}: 기존 로그인이 끊깁니다. 다시 누르면 임시 비밀번호로 바뀝니다.`);
+      timer = setTimeout(reset, 5000);
+      return;
+    }
+    clearTimeout(timer); b.disabled = true; b.textContent = "바꾸는 중…"; // 응답을 기다리는 동안 다시 눌러도 요청은 한 번만
     try {
       const r = await api(`/api/admin/users/${id}/temp-password`, { method: "POST" });
       const out = document.createElement("code"); out.textContent = r.temp_password; // 한 번만 보인다. 전달 뒤 화면을 닫는다
       b.replaceWith(out); toast("임시 비밀번호를 전달하세요. 첫 로그인 때 바꾸게 됩니다.");
-    } catch (err) { toast(err.message); }
+    } catch (err) { reset(); toast(err.message); }
   };
   return b;
 }
