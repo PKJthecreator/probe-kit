@@ -44,8 +44,8 @@ def init_db(conn):
         expires REAL NOT NULL, used INTEGER NOT NULL DEFAULT 0);
     CREATE TABLE IF NOT EXISTS outbox(id INTEGER PRIMARY KEY, to_addr TEXT, subject TEXT, body TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP);
     CREATE TABLE IF NOT EXISTS items(id INTEGER PRIMARY KEY, owner_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-        title TEXT NOT NULL, created_at TEXT DEFAULT CURRENT_TIMESTAMP);
-    """)
+        title TEXT NOT NULL, version INTEGER NOT NULL DEFAULT 1, created_at TEXT DEFAULT CURRENT_TIMESTAMP);
+    """)  # 열을 더해도 이미 만든 DB 파일에는 안 생긴다(IF NOT EXISTS) → 새 DB로 시작하거나 ALTER TABLE
 
 
 def create_user(conn, username, name, password, role="member", email=None, must_change=False):

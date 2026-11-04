@@ -325,4 +325,21 @@ def get_item(item_id: int, user=Depends(require_user), db: sqlite3.Connection = 
     return dict(row)
 
 
+class ItemPatch(ItemIn):
+    version: int = Field(ge=1)  # 화면이 불러올 때 받은 값을 그대로 돌려보낸다
+
+
+@app.patch("/api/items/{item_id}")
+def update_item(item_id: int, body: ItemPatch, user=Depends(require_user), db: sqlite3.Connection = Depends(get_db)):
+    """동시 수정: 권한 먼저(없거나 남의 것 404), 그다음 version이 그대로일 때만 한 번의 UPDATE로 바꾼다.
+    그 사이 다른 사람이 저장했으면 0행 → 409, 값은 그대로 둔다(나중 저장이 앞 저장을 덮지 않는다)."""
+    get_item(item_id, user, db)
+    with db:
+        cur = db.execute("UPDATE items SET title=?, version=version+1 WHERE id=? AND version=?",
+                         (body.title.strip(), item_id, body.version))
+    if cur.rowcount == 0:
+        raise HTTPException(409, "다른 사람이 먼저 고쳤습니다. 새로 불러온 뒤 다시 저장하세요")
+    return dict(db.execute("SELECT * FROM items WHERE id=?", (item_id,)).fetchone())
+
+
 app.mount("/", StaticFiles(directory=Path(__file__).resolve().parent.parent / "static", html=True), name="static")

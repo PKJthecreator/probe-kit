@@ -106,6 +106,18 @@ def test_row_ownership_404():
         assert all(i["owner_id"] != item["owner_id"] for i in b.get("/api/items").json())
 
 
+def test_concurrent_edit_409():
+    with client() as a, client() as b:
+        signup(a, "edit01"); signup(b, "edit02")
+        item = a.post("/api/items", json={"title": "처음"}).json()
+        url, v = f"/api/items/{item['id']}", item["version"]
+        assert b.patch(url, json={"title": "남이", "version": v}).status_code == 404   # 권한이 409보다 먼저
+        first = a.patch(url, json={"title": "먼저", "version": v})
+        assert first.status_code == 200 and first.json()["version"] == v + 1
+        assert a.patch(url, json={"title": "늦게", "version": v}).status_code == 409   # 옛 version으로 두 번째 저장
+        assert a.get(url).json()["title"] == "먼저"                                    # 덮어쓰지 않았다
+
+
 def test_forgot_reset_flow():
     with client() as c:
         signup(c, "jung01", email="jung@example.com")
